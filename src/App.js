@@ -1,48 +1,88 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 
-// NOTA: eu não instalei o uuid no PC, vamos ver até onde vai sem instalar.
-
 export default function App() {
-  const [task, setTask] = useState([]);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [username, setUsername] = useState("");
+  const [posts, setPosts] = useState("");
 
-  // Cria um array de objetos dentro do estado. Uma para cada task.
-  function addTaskHandler(event) {
-    if (event.key == "Enter" && event.target.value != "") {
-      setTask([
-        ...task,
-        {
-          tarefa: event.target.value,
-          id: uuidv4(),
-        },
-      ]);
-      event.target.value = "";
-    }
+  function getLivros() {
+    axios
+      .get("http://localhost:3001/livros")
+      .then((resp) => setPosts(resp.data))
+      .catch((erro) => console.log(erro.message, erro.name, erro.code));
   }
-  
-  // Faz manter todos os objetos que não sejam o que foi clicado.
-  function RemoveTaskHandler(id) {
-    const removeTask = task.filter((task) => task.id !== id);
-    console.log("Pop: ", removeTask);
-    setTask(removeTask);
+
+  useEffect(() => {getLivros()}, []);
+
+  function onSubmit(event) {
+    event.preventDefault();
+    const id = uuidv4();
+    axios
+      .post(`http://localhost:3001/livros/:${id}`, {
+        id: id,
+        title: title,
+        content: content,
+        username: username,
+      })
+      .then((resp) => getLivros())
+      .catch((erro) => console.log(erro.message, erro.name, erro.code));
   }
-  
+
+  function onDeletePost(event, id) {
+    event.preventDefault();
+    console.log(id);
+    axios
+      .delete(`http://localhost:3001/livros/${id}`)
+      .then((resp) => getLivros())
+      .catch((erro) => console.log(erro.message, erro.name, erro.code));
+  }
+
   return (
-    <div>
-      <p>LISTA DE TAREFAS</p>
-      <label>Escreva sua tarefa</label>
-      <input type="text" onKeyDown={(event) => addTaskHandler(event)} />
-      {task.map((task) => (
-        <p key={task.id}>
-          {task.tarefa}
-          <span 
-            onClick={() => RemoveTaskHandler(task.id)} style={{ cursor: 'pointer' }}>
-              [x]
-          </span>
-        </p>
-      ))}
+    <div className="container">
+      <form className="form__container">
+        <label>Titulo</label>
+        <input type="text" onChange={(event) => setTitle(event.target.value)} />
+        <label>Postagem</label>
+        <input
+          type="text"
+          onChange={(event) => setContent(event.target.value)}
+        />
+        <label>Username</label>
+        <input
+          type="text"
+          onChange={(event) => setUsername(event.target.value)}
+        />
+        <button className="form__container--submit_button" onClick={onSubmit}>
+          Criar postagem
+        </button>
+      </form>
+      <section className="post__container">
+        <h2>Postagens</h2>
+        <div className="form__container--bindestreck" />
+        {posts &&
+          posts.map((post) => (
+            <div key={uuidv4()} className="post__container--post">
+              <h3>{post.title}</h3>
+              <p>{post.content}</p>
+              <p>{post.username}</p>
+              <div>
+                <button
+                  className="post__container--delete_button"
+                  onClick={(event) => onDeletePost(event, post.id)}
+                >
+                  Deletar
+                </button>
+                <button className="post__container--update_button">
+                  Editar
+                </button>
+              </div>
+            </div>
+          ))}
+      </section>
     </div>
   );
 }
-
