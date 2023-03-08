@@ -3,41 +3,48 @@ import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 
+interface Iposts {
+  _id: string | '',
+  title: string,
+  content: string,
+  username: string,
+}
+
 export default function App() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [username, setUsername] = useState("");
-  const [posts, setPosts] = useState("");
+  const [posts, setPosts] = useState<Iposts[]>([]);
 
-  function getLivros() {
+  function getBooks() {
     axios
-      .get("http://localhost:3001/livros")
+      .get("http://localhost:3001/books")
       .then((resp) => setPosts(resp.data))
       .catch((erro) => console.log(erro.message, erro.name, erro.code));
   }
 
-  useEffect(() => {getLivros()}, []);
+  useEffect(() => {getBooks()}, []);
 
-  function onSubmit(event) {
+  function onSubmit(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     event.preventDefault();
-    const id = uuidv4();
     axios
-      .post(`http://localhost:3001/livros/:${id}`, {
-        id: id,
+      .post(`http://localhost:3001/books`, {
         title: title,
         content: content,
         username: username,
       })
-      .then((resp) => getLivros())
+      .then(() => getBooks())
       .catch((erro) => console.log(erro.message, erro.name, erro.code));
   }
 
-  function onDeletePost(event, id) {
+  function onDeletePost(
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    id: string
+  ) {
     event.preventDefault();
-    console.log(id);
     axios
-      .delete(`http://localhost:3001/livros/${id}`)
-      .then((resp) => getLivros())
+      .delete(`http://localhost:3001/books/${id}`)
+      .then((resp) => getBooks())
       .catch((erro) => console.log(erro.message, erro.name, erro.code));
   }
 
@@ -72,7 +79,7 @@ export default function App() {
               <div>
                 <button
                   className="post__container--delete_button"
-                  onClick={(event) => onDeletePost(event, post.id)}
+                  onClick={(event) => onDeletePost(event, post._id)}
                 >
                   Deletar
                 </button>
